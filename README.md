@@ -1,5 +1,4 @@
-# mixin-class
-mixin配合class实现多继承的绝佳妙用
+# mixin配合class实现多继承的绝佳妙用
 
 ## mixin
 
