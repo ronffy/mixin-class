@@ -12,21 +12,21 @@ mixin一般翻译为“混入”、“混合”，
 
 为了使你能够最快的清楚我在说什么，我们从一个需求说起
 
-一个项目中有多个弹层需求，
-一些是公共方法，比如点击关闭按钮关闭弹层
-一些弹层是可以拖动的，且有蒙层
-一些弹层是可以缩放的
-其他都是业务方法，无可复用性
+一个项目中有多个弹层需求；
+一些是公共方法，比如点击关闭按钮关闭弹层；
+一些弹层是可以拖动的，且有蒙层；
+一些弹层是可以缩放的；
+其他都是业务方法，无可复用性。
 
 你可以先在心里想下，如果是你，你会怎样完成这个需求？
 
 
 ## 脑海中规划下
 
-我们为公共方法写个类：BaseModal
-为可拖动的弹层写个类：DragModal
-为可缩放的弹层写个类：ScaleModal
-为自定义的业务需求写个类：CustomModal
+我们为公共方法写个类：`BaseModal`
+为可拖动的弹层写个类：`DragModal`
+为可缩放的弹层写个类：`ScaleModal`
+为自定义的业务需求写个类：`CustomModal`
 
 画个脑图的话，会是下面图片中的样子：
 
@@ -79,7 +79,7 @@ c.hasLayer; // true
 
 ### 抛出问题
 
--  如何使CustomModal能够同时继承DragModal和ScaleModal？
+-  如何使`CustomModal`能够同时继承`DragModal`和`ScaleModal`？
 -  某个相同方法希望不覆盖，而是都执行
 
 
@@ -137,12 +137,12 @@ console.log(c.hasLayer); // undefined
 ```
 
 ### 存在的问题
-以上mix方式实现了多继承，但存在以下问题
+以上<code>mix</code>方式实现了多继承，但存在以下问题
 
--  会修改target类的原型对象
--  target类的相同方法名会被被继承类的相同方法名覆盖
+-  会修改`target`类的原型对象
+-  `target`类的相同方法名会被被继承类的相同方法名覆盖
 -  实例属性无法继承
--  Base类无法被继承
+-  `BaseModal`类无法被继承
 
 
 ## 只继承不修改prototype的实现方式
@@ -181,8 +181,8 @@ console.log(c.hasLayer); // true
 
 ### 存在的问题
 
-如何让CustomModal再继承ScaleModal呢
-其实很简单，在上面基础上，我们再写一个ScaleModalMixinMixin类就可以了
+如何让`CustomModal`再继承`ScaleModal`呢
+其实很简单，在上面基础上，我们再写一个`ScaleModalMixinMixin`类就可以了
 
 
 ## 完美的多继承
