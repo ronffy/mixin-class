@@ -181,7 +181,7 @@ console.log(c.hasLayer); // true
 
 ### 存在的问题
 
-如何让`CustomModal`再继承`ScaleModal`呢
+如何让`CustomModal`再继承`ScaleModal`呢？
 其实很简单，在上面基础上，我们再写一个`ScaleModalMixinMixin`类就可以了
 
 
@@ -228,7 +228,7 @@ console.log(c.hasLayer); // true
 
 ### 存在的问题
 
-这种方式不会修改父类的原型对象，但是如果纯在跟父类同名的方法，只会执行父类的，而不回执行被继承的类的方法，那么如何使相同方法分别执行呢？
+这种方式不会修改父类的原型对象，但是如果存在跟父类同名的方法，只会执行父类的，而不回执行被继承的类的方法，那么如何使相同方法分别执行呢？
 
 
 ## super实现相同方法不覆盖
