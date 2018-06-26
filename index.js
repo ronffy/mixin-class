@@ -1,124 +1,185 @@
+// 需求：
+// 项目中有多个弹层需求，
+// 一些是公共方法，比如都可以点击关闭按钮关闭弹层
+// 一些弹层是可以拖动的,且有蒙层
+// 一些弹层是可以缩放的
+// 其他大部分都是业务方法，无可复用性
 
-// extends 实现单继承
+// extends 简单实现下
 
-class B {
-	dob(){
-		console.log('b');
-	}
+class BaseModal {
+  close(){
+    console.log('close');
+  }
 }
 
-class A extends B {
-	doa(){
-		console.log('a');
-	}
+class DragModal extends BaseModal {
+  hasLayer = true;
+  drag() {
+    console.log('drag');
+  }
 }
 
+class ScaleModal extends BaseModal {
+  scale() {
+    console.log('scale');
+  }
+}
 
-// mixin实现多继承
+class CustomModal extends DragModal {
+  do() {
+    console.log('do');
+  }
+}
+
+let c = new CustomModal();
+d.close(); // close
+c.drag(); // drag
+c.do(); // do
+c.hasLayer; // true
+
+
+// 抛出问题：
+// 1，如何使CustomModal能够同时继承DragModal和ScaleModal？
+// 2，某个相同方法希望不覆盖，而是都执行
+
+
+
+// 早期的mixin方法实现多继承
 
 function getPrototypes(ClassPrototype) {
-	return Object.getOwnPropertyNames(ClassPrototype).slice(1);
-}
-class A {
-	doa() {
-		console.log('a');
-	}
-}
-class B {
-	dob() {
-		console.log('b');
-	}
-}
-	// 第一种实现方式
-	  /**
-   * mixin混入模式，实现继承多个类
-   * 实现原理：属性拷贝
-   * @param C 实现继承的类
-   * @mixins 被继承的类集合
-   * @return 扩展后的类C
-   */
-  // function mixins(target, ...classes) {
-  //   if (!classes || !Array.isArray(classes)) return target;
-  //   let cp = target.prototype;
-  //   for (let mixin of classes) {
-  //     let mp = mixin.prototype;
-  //     for (let m of getPrototypes(mp)) {
-  //       cp[m] = mp[m];
-  //     }
-  //   }
-  //   return target;
-  // }
-  // class C {
-  //   doc() {
-  //     console.log('c');
-  //   }
-  // }
-  // mixins(C, A, B);
-  // let c = new C();
-  // c.doa();
-  // 第二种实现使用方式
-  // function mixins(...classes){
-  //   return function(target){
-  //     if (!classes || !Array.isArray(classes)) return target;
-  //     let cp = target.prototype;
-  //     for (let C of classes) {
-  //       let mp = C.prototype;
-  //       for (let m of getPrototypes(mp)) {
-  //         cp[m] = mp[m];
-  //       }
-  //     }
-  //   }
-  // }
-  // @mixins(A, B)
-  // class C {
-  //   doc() {
-  //     console.log('c');
-  //   }
-  // }
-  // let c = new C();
-  // c.doa();
-  // 以上两种实现方式有个缺点，就是会修改target类的原型对象
-
-  // 第三种只继承不修改prototype的实现方式
-
-  // 1，混入单个类
-
-  // 2，混入多个类
-
-  // 这种方式不会修改父类的原型对象，但是如果纯在跟父类同名的方法，只会执行父类的，而不回执行被继承的类的方法，
-  // 那么如何
-
-
-
-// 第二种方式：
-
-class Mixin {
-	constructor() {
-		this.mixins = this.mixins || [];
-		mixin(this, ...this.mixins)
-	}
+  return Object.getOwnPropertyNames(ClassPrototype).slice(1);
 }
 
-class C extends Mixin {
-	mixins = [A, B]
-	doc() {
-		console.log('c');
-	}
+function mix(...mixins){
+  return function(target){
+    if (!mixins || !Array.isArray(mixins)) return target;
+    let cp = target.prototype;
+    for (let C of mixins) {
+      let mp = C.prototype;
+      for (let m of getPrototypes(mp)) {
+        cp[m] = mp[m];
+      }
+    }
+  }
+}
+@mix(DragModal, ScaleModal)
+class CustomModal extends DragModal {
+  scale(){
+    console.log('custom-scale');
+  } 
+  do() {
+    console.log('do');
+  }
+}
+let c = new CustomModal();
+c.close(); // 报错，因为dobase没在A或B的prototype上，而是在A.prototype.__proto__上
+c.drag(); // drag
+c.scale(); // scale  并非是我们想要的custom-scale
+console.log(c.hasLayer); // undefined
+
+// 以上mix方式实现了多继承，
+// 但有以下缺点：
+// 1，会修改target类的原型对象
+// 2，target类的相同方法名会被被继承类的相同方法名覆盖
+// 3，实例属性无法继承
+// 4，Base类无法被继承
+
+
+
+// 第三种只继承不修改prototype的实现方式
+
+class BaseModal {
+  close() {
+    console.log('close');
+  }
 }
 
-// 第三种方式
+let DragModalMixin = (extendsClass) => class extends extendsClass {
+  hasLayer = true;
+  drag() {
+    console.log('drag');
+  }
+};
 
-function mixins(...Classes) {
-	return function(target){
-		Object.assign(target.prototype, ...Classes)
-	}
+class CustomModal extends DragModalMixin(BaseModal) {
+  drag() {
+    console.log('custom-drag');
+  }
+  do() {
+    console.log('do');
+  }
 }
 
-@mixins(A, B)
-class C{
-	doc(){
-		console.log('c');
-	}
+let c = new CustomModal();
+
+c.close(); // close
+c.drag(); // custom-drag
+console.log(c.hasLayer); // true
+
+// 如何让CustomModal再继承ScaleModal呢
+// 其实很简单，在上面基础上，我们再写一个ScaleModalMixinMixin类就可以了
+
+let ScaleModalMixin = (extendsClass) => class extends extendsClass {
+  scale() {
+    console.log('scale');
+  }
+};
+
+class CustomModal extends ScaleModalMixin(DragModalMixin(BaseModal)) {
+  drag() {
+    console.log('custom-drag');
+  }
+  do() {
+    console.log('do');
+  }
 }
+
+let c = new CustomModal();
+
+c.close(); // close
+c.drag(); // custom-drag
+c.scale(); // scale
+console.log(c.hasLayer); // true
+
+// 这种方式不会修改父类的原型对象，但是如果纯在跟父类同名的方法，只会执行父类的，而不回执行被继承的类的方法，
+// 那么如何使相同方法分别执行呢？
+
+class BaseModal {
+  close() {
+    console.log('close');
+  }
+}
+
+let DragModalMixin = (extendsClass) => class extends extendsClass {
+  hasLayer = true;
+  drag() {
+    console.log('drag');
+  }
+};
+let ScaleModalMixin = (extendsClass) => class extends extendsClass {
+  scale() {
+    console.log('scale');
+  }
+  close() {
+    console.log('scale-close');
+    if (super.close) super.close();
+  }
+};
+
+class CustomModal extends ScaleModalMixin(DragModalMixin(BaseModal)) {
+  close() {
+    console.log('custom-close');
+    if (super.close) super.close();
+  }
+  do() {
+    console.log('do');
+  }
+}
+
+let c = new CustomModal();
+
+c.close(); // custom-close   ->   scale-close   ->   close
+
 
 
