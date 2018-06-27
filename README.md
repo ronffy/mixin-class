@@ -121,7 +121,7 @@ function mix(...mixins){
   }
 }
 @mix(DragModal, ScaleModal)
-class CustomModal extends DragModal {
+class CustomModal {
   scale(){
     console.log('custom-scale');
   } 
