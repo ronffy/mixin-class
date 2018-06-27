@@ -2,7 +2,7 @@
 
 ## 什么是mixin
 
-mixin一般翻译为“混入”、“混合”，
+mixin一般翻译为“混入”、“混合”,
 早期一般解释为：把一个对象的方法和属性拷贝到另一个对象上；
 也可以简单理解为能够被继承的类，
 最终目的是实现代码的复用。
@@ -71,7 +71,7 @@ class CustomModal extends DragModal {
 }
 
 let c = new CustomModal();
-d.close(); // custom-close
+c.close(); // custom-close
 c.drag(); // drag
 c.do(); // do
 c.hasLayer; // true
