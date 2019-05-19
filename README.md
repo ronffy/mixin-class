@@ -2,20 +2,20 @@
 
 ## 什么是mixin
 
-mixin一般翻译为“混入”、“混合”,
-早期一般解释为：把一个对象的方法和属性拷贝到另一个对象上；
-也可以简单理解为能够被继承的类，
-最终目的是实现代码的复用。
+mixin一般翻译为“混入”、“混合”,  
+早期一般解释为：把一个对象的方法和属性拷贝到另一个对象上；  
+也可以简单理解为能够被继承的类，  
+最终目的是实现代码的复用。  
 
 
 ## 从一个需求说起
 
 为了使你能够最快的清楚我在说什么，我们从一个需求说起：
 
-一个项目中有多个弹层需求；
-一些是公共方法，比如点击关闭按钮关闭弹层；
-一些弹层是可以拖动的，且有蒙层；
-一些弹层是可以缩放的；
+一个项目中有多个弹层需求；  
+一些是公共方法，比如点击关闭按钮关闭弹层；  
+一些弹层是可以拖动的，且有蒙层；  
+一些弹层是可以缩放的；  
 其他都是业务方法，无可复用性。
 
 你可以先在心里想下，如果是你，你会怎样完成这个需求？
@@ -23,10 +23,10 @@ mixin一般翻译为“混入”、“混合”,
 
 ## 脑海中规划下
 
-我们为公共方法写个类：`BaseModal`
-为可拖动的弹层写个类：`DragModal`
-为可缩放的弹层写个类：`ScaleModal`
-为自定义的业务需求写个类：`CustomModal`
+我们为公共方法写个类：`BaseModal`  
+为可拖动的弹层写个类：`DragModal`  
+为可缩放的弹层写个类：`ScaleModal`  
+为自定义的业务需求写个类：`CustomModal`  
 
 画个脑图的话，会是下面图片中的样子：
 
@@ -45,18 +45,18 @@ class BaseModal {
   }
 }
 
+// 可以缩放的弹层，我们写一个单独的类
+class ScaleModal extends BaseModal {
+  scale() {
+    console.log('scale');
+  }
+}
+
 // 可以拖动的弹层，我们写一个单独的类
 class DragModal extends BaseModal {
   hasLayer = true;
   drag() {
     console.log('drag');
-  }
-}
-
-// 可以缩放的弹层，我们写一个单独的类
-class ScaleModal extends BaseModal {
-  scale() {
-    console.log('scale');
   }
 }
 
@@ -108,7 +108,7 @@ function getPrototypes(ClassPrototype) {
   return Object.getOwnPropertyNames(ClassPrototype).slice(1);
 }
 
-function mix(...mixins){
+function mixin(...mixins){
   return function(target){
     if (!mixins || !Array.isArray(mixins)) return target;
     let cp = target.prototype;
@@ -120,7 +120,7 @@ function mix(...mixins){
     }
   }
 }
-@mix(DragModal, ScaleModal)
+@mixin(DragModal, ScaleModal)
 class CustomModal {
   scale(){
     console.log('custom-scale');
@@ -130,14 +130,14 @@ class CustomModal {
   }
 }
 let c = new CustomModal();
-c.close(); // 报错，因为dobase没在A或B的prototype上，而是在A.prototype.__proto__上
+c.close(); // 报错，因为 close 没在 DragModal 或 ScaleModal 的 prototype 上，而是在 DragModal.prototype.__proto__ 上
 c.drag(); // drag
 c.scale(); // scale  并非是我们想要的custom-scale
 console.log(c.hasLayer); // undefined
 ```
 
 ### 存在的问题
-以上<code>mix</code>方式实现了多继承，但存在以下问题
+以上`mixin`方式实现了多继承，但存在以下问题
 
 -  会修改`target`类的原型对象
 -  `target`类的相同方法名会被被继承类的相同方法名覆盖
@@ -145,50 +145,9 @@ console.log(c.hasLayer); // undefined
 -  `BaseModal`类无法被继承
 
 
-## 只继承不修改prototype的实现方式
-
-### 看代码
-
-```javascript
-class BaseModal {
-  close() {
-    console.log('close');
-  }
-}
-
-let DragModalMixin = (extendsClass) => class extends extendsClass {
-  hasLayer = true;
-  drag() {
-    console.log('drag');
-  }
-};
-
-class CustomModal extends DragModalMixin(BaseModal) {
-  drag() {
-    console.log('custom-drag');
-  }
-  do() {
-    console.log('do');
-  }
-}
-
-let c = new CustomModal();
-
-c.close(); // close
-c.drag(); // custom-drag
-console.log(c.hasLayer); // true
-```
-
-### 存在的问题
-
-如何让`CustomModal`再继承`ScaleModal`呢？
-其实很简单，在上面基础上，我们再写一个`ScaleModalMixinMixin`类就可以了
-
-
 ## 完美的多继承
 
 ### 看代码
-
 ```javascript
 class BaseModal {
   close() {
@@ -196,58 +155,13 @@ class BaseModal {
   }
 }
 
-let DragModalMixin = (extendsClass) => class extends extendsClass {
+let DragModalMinxin = (extendsClass) => class extends extendsClass {
   hasLayer = true;
   drag() {
     console.log('drag');
   }
 };
-
-let ScaleModalMixin = (extendsClass) => class extends extendsClass {
-  scale() {
-    console.log('scale');
-  }
-};
-
-class CustomModal extends ScaleModalMixin(DragModalMixin(BaseModal)) {
-  drag() {
-    console.log('custom-drag');
-  }
-  do() {
-    console.log('do');
-  }
-}
-
-let c = new CustomModal();
-
-c.close(); // close
-c.drag(); // custom-drag
-c.scale(); // scale
-console.log(c.hasLayer); // true
-```
-
-### 存在的问题
-
-这种方式不会修改父类的原型对象，但是如果存在跟父类同名的方法，只会执行父类的，而不回执行被继承的类的方法，那么如何使相同方法分别执行呢？
-
-
-## super实现相同方法不覆盖
-
-### 看代码
-```javascript
-class BaseModal {
-  close() {
-    console.log('close');
-  }
-}
-
-let DragModalMixin = (extendsClass) => class extends extendsClass {
-  hasLayer = true;
-  drag() {
-    console.log('drag');
-  }
-};
-let ScaleModalMixin = (extendsClass) => class extends extendsClass {
+let ScaleModalMinxin = (extendsClass) => class extends extendsClass {
   scale() {
     console.log('scale');
   }
@@ -257,7 +171,9 @@ let ScaleModalMixin = (extendsClass) => class extends extendsClass {
   }
 };
 
-class CustomModal extends ScaleModalMixin(DragModalMixin(BaseModal)) {
+@DragModalMinxin
+@ScaleModalMinxin
+class CustomModal extends BaseModal {
   close() {
     console.log('custom-close');
     if (super.close) super.close();
@@ -269,8 +185,18 @@ class CustomModal extends ScaleModalMixin(DragModalMixin(BaseModal)) {
 
 let c = new CustomModal();
 
-c.close(); // custom-close   ->   scale-close   ->   close
+c.hasLayer // true
+c.close(); // scale-close  ->  custom-close  ->  close
 ```
+
+可以看到，通过高阶函数的形式，我们既使`CustomModal`同时继承了`DragModal`和`ScaleModal`，  
+又使某个相同方法不覆盖，都可以执行。
+
+注：以上是修饰器写法，需要配置`babel`支持，如果不支持时，可以这样写
+```js
+CustomModal = DragModalMinxin(ScaleModalMinxin(CustomModal));
+```
+
 
 ## 总结
 
